@@ -1,43 +1,29 @@
 # By Jonathan Christen
-# 2024-10-30
+# 2024-11-2
 # My company
 # My legal statement
 # comment symbols (do not execute this code)
 # process raw text files into LangQ readable text
 
 import os
-import re
 from unicodedata import digit
 import collections
 
-def __main__():
-     ### Pulls Bible chapters and processes them into a book. ###
-    processor = processor()
-
-
-    processor.paths(directory)
-    output = ""
-
-    for key, filename in filenames.items():
-        print(key,filename)
-        data = processor.read_chapter(directory + filename)
-        data = processor.process_data(data)
-        output += "Capítulo " + filename.split("-")[-1].split(".")[0] + '\n'
-        output += data + '\n'
-    processor.write(output, directory, book)
-    return 0
-
-class processor:
+class process:
     ### facilitates and processes chapters into a final book ###
     def __init__(self):
         ### constructor ###
+        return None
+    
+    def __del__(self):
+        ### deconstructor ###
         return 0
 
     def path(self, directory):
-        self._directory = "libre-de-salmo-1//"
+        ### Gets book name from a directory and returns .txt file names in that directory. ###
+        self._directory = directory
         self._book = self._directory[:-2].replace("-", " ").title() + '.txt'
-        self._filenames = self.__get_filenames(self._directory, self._book)
-        return 0
+        return self.__get_filenames()
 
     def __get_filenames(self):
         filenames = next(os.walk(self._directory), (None, None, []))[2]  # [] if no file
@@ -48,14 +34,14 @@ class processor:
         for filename in filenames:
             if not filename.endswith(".txt") and filename.split(".")[0] != self._directory[:-2]:
                 continue
-            if filename == (book):
+            if filename == (self._book):
                 continue
             filename_dict[int(filename.split("-")[-1].split(".")[0])] = filename
         filename_dict = collections.OrderedDict(sorted(filename_dict.items()))
         return filename_dict
 
 
-    def write(self, output):
+    def write(self, output, filename):
         ### Write chapter  ###
         filename = self._directory + self._book
         f = open(filename, "w", encoding='utf-8')
@@ -82,11 +68,9 @@ class processor:
         return processed_data
 
 
-    def read_chapter(self, path):
+    def read(self, filename):
+        path = self._directory + filename
         f = open(path, "r", encoding='utf-8')
         data = f.readlines()
         f.close()
         return data
-
-if __name__ == '__main__':
-    __main__()
