@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 import os   
 from inputs import *
+import time
+import string
 
 class SourceGetter:
     ''' Gets website data and writes it to files. '''
@@ -42,7 +44,7 @@ class SourceGetter:
         end   = "</span>"
 
         verse_numbers = text.split(number_start)
-        processed_string = ""
+        processed_string = None
         for count, raw in enumerate(verse_numbers):
             # Index 0 and 1 are junk values.
             if count < 2:
@@ -55,26 +57,54 @@ class SourceGetter:
                 # The # occurs within verse continuation.
                 if verse == '#':
                     continue
+
+                # First use.
+                if processed_string == None:
+                    processed_string = verse
+                    continue
+
+                # Edge cases.
+                if  verse == 'eñor':
+                    processed_string = processed_string + verse
+                    continue
                 
-                if len(processed_string) != 0:
-                    if processed_string[-1].isdigit():
-                        processed_string = processed_string + " "  + verse
-                        continue
-                processed_string = processed_string + verse 
+                if  processed_string[-1] in [ ' ' ] or\
+                    verse[0]             in [ ' ' ] or\
+                    processed_string[-1].isalpha() and verse[0] in \
+                        [ ':', ',', '.', '?', '!' ]:
+                    processed_string = processed_string + verse
+                    continue
+                
+                if processed_string[-1].isalpha() and verse[0] in [':',',','.']:
+                    processed_string = processed_string + verse
+                    continue
+                    
+
+                processed_string = processed_string + " "  + verse
+        
+        # No chapter case.
+        if processed_string == None:
+            return str()
         
         return processed_string.split("</path></svg>")[-1]
         
     def pull_html_data(self):
         ''' '''
+        print( 'Comenzar | Biblia   | ' + url_bible )
         for row in table:
+            print("Comenzar | Libre    | " + row[0] )
             book = ""
             go  = True
             index = int(0)
             while go == True:
                 index += 1
-                url = url_base.replace(url_book, row[1]).replace(url_chapter, str(index))
-                print("Bible: " + url_bible + ", Book: " + row[0] + ", Chapter: " + str(index))
+                url = url_base.replace( url_book, row[1] )\
+                    .replace( url_chapter, str(index) )
+                
                 try:
+                    # Sometimes pulling information to quickly trigers errors 
+                    # in the web server.
+                    time.sleep(0.5)
                     response = requests.get(url)
                 except:
                     go = False
@@ -91,7 +121,7 @@ class SourceGetter:
                     print("Failed to retrieve the page. Status code:", \
                         response.status_code)
                     continue
-            
+                print("Completo | Capitulo | " + str(index))
             filename = directory + "/" + row[0] + ".txt"
             SourceGetter.write(book, filename)
         print('Done.')
