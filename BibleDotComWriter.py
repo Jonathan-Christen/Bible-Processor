@@ -1,21 +1,23 @@
 # By Jonathan Christen
-import sys
 import requests
 from bs4 import BeautifulSoup
-import os   
+import os
 import time
-from BibleDotComWriterConfigSpanish import *
+from BibleDotComWriterConfig import *
 
 class BibleDotComWriter:
     ''' Gets bible.com data for a bible version and writes it to files. '''
     def __init__(self) -> None:
         ''' Constructor '''
         # Pushes variables from BibleDotComWriterConfigSpanish.py into
+        self.url_replace_bible_number = url_replace_bible_number
         self.url_replace_bible   = url_replace_bible
         self.url_replace_book    = url_replace_book
         self.url_replace_chapter = url_replace_chapter
         self.url_base            = url_base
-        self.books_table         = books_table
+        self.books_table_english = books_table_english
+        self.books_table_spanish = books_table_spanish
+        self.chapter_language    = chapter_language
     
     def __del__(self) -> None:
         ''' Deconstructor '''
@@ -68,14 +70,15 @@ class BibleDotComWriter:
                     continue
 
                 # Edge cases.
-                if  processed_string[-1] in [ ' ' ] or\
-                    verse[0]             in [ ' ' ] or\
-                    processed_string[-1].isalpha() and verse[0] in \
-                        [ ':', ',', '.', '?', '!' ]:
+                if  processed_string[-1] in [ ' ' ]:
                     processed_string = processed_string + verse
                     continue
                 
-                if processed_string[-1].isalpha() and verse[0] in [':',',','.']:
+                if verse[0] in [ ' ' ]:
+                    processed_string = processed_string + verse
+                    continue
+                
+                if verse[0] in [ ';', ':', ',', '.', '?', '!' ]:
                     processed_string = processed_string + verse
                     continue
 
@@ -83,63 +86,105 @@ class BibleDotComWriter:
                     processed_string = processed_string + verse
                     continue
 
-                processed_string = processed_string + " "  + verse
+                processed_string = processed_string + " " + verse
         
         # No chapter case.
         if processed_string == None:
             return str()
         
         return processed_string.split("</path></svg>")[-1]
-        
-    def write_bible(self, bible: str) -> None:
+
+    def _language_chapter_table(self, language: str) -> list:
+        ''' Returns table of bible book tables in a specific language. '''
+        if language == "English" or "english":
+            books_table    = self.books_table_english
+            self.language  = "english"
+            self.flip_text = False
+            return books_table
+        if language == "Spanish" or "spanish" or "Español" or "español":
+            books_table    = self.books_table_spanish
+            self.flip_text = False
+            self.language  = "spanish"
+            return books_table
+        if language == "Arabic" or "arabic":
+            books_table    = self.books_table_spanish
+            self.flip_text = True
+            self.language  = "arabic"
+            return books_table
+        print("Error: Your language <{0}> is not supported".format(language))
+        return []
+
+    def write_bible(self, site_bible_num: int, bible: str, language: str) -> None:
         '''
         Writes bible by chapter to file in a directory named after the bible.
 
         Parameters
         ----------
+            site_bible_num: int
+                
             bible: str
                 This is the bible to be pulled from bible.com and writen to files
-                using the bible version's acronym (I.E. KJV, NAV, NBLA).
+                using the bible version's acronym (i.e. kjv, nav, nbla).
+            language: str
+
         '''
+        books_table = self._language_chapter_table(language)
+        if len(books_table) == 0:
+            return None
+        print(self.language)
+        print(self.chapter_language[self.language])
+        
         self.bible = bible
         self._make_directory()
         # Bible level.
         print("Comenzar | Biblia   | {0}".format(self.bible))
         # Book level.
-        for book_row in self.books_table:
+        for book_row in books_table:
             print("Comenzar | Libre    | {0}".format(book_row[0]))
             book = ""
             chapter_num = 0
             # Chapter level.
-            while True:
+            found = True
+            while found == True:
                 chapter_num += 1
-                url = (self.url_base.replace(self.url_replace_bible,   self.bible))    \
-                                    .replace(self.url_replace_book,    book_row[1]) \
-                                    .replace(self.url_replace_chapter, str(chapter_num))
+                url = self.url_base.replace(self.url_replace_bible,   self.bible.capitalize())\
+                                   .replace(self.url_replace_book,    book_row[1])            \
+                                   .replace(self.url_replace_chapter, str(chapter_num))       \
+                                   .replace(self.url_replace_bible_number, str(site_bible_num))
                 
-                try:
-                    # Sometimes pulling information to quickly triggers server in the web server.
-                    time.sleep(0.5)
-                    response = requests.get(url)
-                except:
-                    break
-                
-                if response.status_code == 200:
-                    chapter = self._process_html(response)
-                    if len(chapter) > 0:
-                        book = book + "Capitulo {0}\n".format(str(chapter))
-                        book = book + chapter + "\n"
+                # Give a multiple tries to get the chapter.
+                for i in range(10):
+                    try:    
+                        # Sometimes pulling information to quickly triggers server in the web server.
+                        time.sleep(0.1)
+                        response = requests.get(url)
+                    except:
+                        continue
+                    
+                    if response.status_code == 200:
+                        chapter = self._process_html(response)
+                        if len(chapter) > 0:
+                            book = book + "{0} {1}\n".format(
+                                self.chapter_language[self.language], str(chapter_num))
+                            book = book + chapter + "\n"
+                            break
+                        else:
+                            continue
                     else:
-                        break
-                else:
-                    print("Error: Failed to retrieve the page {0}. Status code:{1}"\
-                          .format(url, response.status_code))
-                    continue
-                print("Completo | Capitulo | {0}".format(str(chapter_num)))
+                        print("Error: Failed to retrieve the page {0}. Status code:{1}"\
+                            .format(url, response.status_code))
+                        continue
+                    
+                if i == 9:
+                    found = False                        
+                print("Completo | {0} | {1}".format(
+                    self.chapter_language[self.language], str(chapter_num)))
             filename = self.bible + "/" + book_row[0] + ".txt"
             self._write(book, filename)
         print('Done.')
 
-if __name__ == "__main__"():
+if __name__ == "__main__":
     bible_class = BibleDotComWriter()
-    bible_class.write_bible("nbla")
+    bible_class.write_bible(103, "nbla", "Spanish")
+    bible_class.write_bible(104, "ncv",  "English")
+    bible_class.write_bible(101, "keh",  "Arabic" )
