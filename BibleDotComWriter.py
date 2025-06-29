@@ -19,7 +19,7 @@ class BibleDotComWriter:
         '''
         Constructor
         '''
-        # Pushes variables from BibleDotComWriterConfigSpanish.py into the class
+        # Pushes variables from BibleDotComWriterConfigSpanish.py into the object.
         self.url_replace_bible_number = url_replace_bible_number
         self.url_replace_bible        = url_replace_bible
         self.url_replace_book         = url_replace_book
@@ -52,7 +52,7 @@ class BibleDotComWriter:
 
     def _make_directory(self) -> None:
         '''
-        Make a new directory.
+        Make a new directory for each bible version.
         '''
         if not os.path.exists(self.bible):
             os.mkdir(self.bible)
@@ -98,7 +98,7 @@ class BibleDotComWriter:
                 if verse == '#':
                     continue
 
-                # First use.
+                # First string case.
                 if processed_string == None:
                     processed_string = verse
                     continue
@@ -235,7 +235,7 @@ class BibleDotComWriter:
         self.bible = bible
         self._make_directory()
 
-        # Bible level.
+        # Bible (version) level.
         print("{0} {1}".format(self.notifications[self.language]['version'], self.bible))
         # Book level.
         for book_row in self.books_table:
@@ -279,6 +279,7 @@ class BibleDotComWriter:
             self._write(book, filename)
         print('Done.')
 
+# Example code.
 if __name__ == "__main__":
     bible_class = BibleDotComWriter()
     bible_class.write_bible(1588, "amp",  "English")

@@ -1,4 +1,7 @@
-# By Jonathan Christen
+'''
+    Jonathan Christen
+    2025
+'''
 url_replace_bible_number = "$bible_number$"
 url_replace_bible        = "$version$"
 url_replace_book         = "$book$"
