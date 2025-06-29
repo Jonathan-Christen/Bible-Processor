@@ -3,8 +3,20 @@ url_replace_bible_number = "$bible_number$"
 url_replace_bible        = "$version$"
 url_replace_book         = "$book$"
 url_replace_chapter      = "$chapter$"
-url_base    = 'https://www.bible.com/es/bible/$bible_number$/$book$.$chapter$.$version$'
-chapter_language = {'english': 'Chapter', 'spanish': 'Capitulo', 'arabic': 'الفصل'}
+url_base = 'https://www.bible.com/es/bible/$bible_number$/$book$.$chapter$.$version$'
+chapter_language = {'english': 'Chapter',
+                    'spanish': 'Capitulo',
+                    'arabic':  'الفصل'}
+command_line_notifications = {
+        'spanish': {'version': 'Biblia   |',
+                    'book':    'Libre    |',
+                    'chapter': 'Capitulo |'},
+        'english': {'version': 'Version |',
+                    'book':    'Book    |',
+                    'chapter': 'Chapter |'},
+        'arabic' : {'version': 'بداية | ',
+                    'book':    'كتب   | ',
+                    'chapter': 'اصدار | '} }
 books_table = [
         "GEN",
         "EXO",
