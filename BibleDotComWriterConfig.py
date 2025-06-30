@@ -7,10 +7,15 @@ url_replace_bible        = "$version$"
 url_replace_book         = "$book$"
 url_replace_chapter      = "$chapter$"
 url_base = 'https://www.bible.com/es/bible/$bible_number$/$book$.$chapter$.$version$'
-chapter_language = {'english': 'Chapter',
-                    'spanish': 'Capitulo',
-                    'arabic':  'الفصل'}
-command_line_notifications = {
+
+parser_data = {'chapter_title_start': '<div class="ChapterContent_reader__Dt27r"><h1>',
+               'chapter_title_end':   '</h1>',
+               'verse_number_start':  'R2PLt\">',
+               'verse_start':         'RrUqA\">',
+               'verse_end':           '</span>',
+               'verses_end':          '</path></svg>'}
+
+language_specific = {
         'spanish': {'version': 'Biblia   |',
                     'book':    'Libre    |',
                     'chapter': 'Capitulo |'},
