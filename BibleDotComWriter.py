@@ -2,7 +2,6 @@
     Jonathan Christen
     2025
 '''
-import sys
 from curses.ascii import isdigit
 import requests
 from bs4 import BeautifulSoup
@@ -19,7 +18,7 @@ class BibleDotComWriter:
         '''
         Constructor
         '''
-        # Pushes variables from BibleDotComWriterConfigSpanish.py into the object.
+        # Pushes variables from BibleDotComWriterConfig.py into the object.
         self.url_replace_bible_number = url_replace_bible_number
         self.url_replace_bible        = url_replace_bible
         self.url_replace_book         = url_replace_book
@@ -28,13 +27,13 @@ class BibleDotComWriter:
         self.books_table              = books_table
         self.language_specific        = language_specific
         self.parser_data              = parser_data
-    
+
     def __del__(self) -> None:
         '''
         Deconstructor
         '''
         return None
-    
+
     def _write(self, data: str, filename: str) -> None:
         '''
         Write data to a file.
@@ -88,7 +87,7 @@ class BibleDotComWriter:
             verses_raw = raw.split(self.parser_data['verse_start'])
             for verse in verses_raw:
                 verse = verse.split(self.parser_data['verse_end'])[0]
-                
+
                 # The # occurs within verse continuation.
                 if verse == '#':
                     continue
@@ -102,12 +101,8 @@ class BibleDotComWriter:
                 if  processed_string[-1] in [ ' ', '(' ]:
                     processed_string = processed_string + verse
                     continue
-                
-                if verse[0] in [ ' ' ]:
-                    processed_string = processed_string + verse
-                    continue
-                
-                if verse[0] in [ ';', ':', ',', '.', '?', '!' ]:
+
+                if verse[0] in [ ' ', ';', ':', ',', '.', '?', '!' ]:
                     processed_string = processed_string + verse
                     continue
 
@@ -115,7 +110,7 @@ class BibleDotComWriter:
                     processed_string = processed_string + verse
                     continue
 
-                if  processed_string == 'L' and verse == 'ord':
+                if  processed_string[-1] == 'L' and verse[:3] == 'ord':
                     processed_string = processed_string + verse
                     continue
 
@@ -124,27 +119,26 @@ class BibleDotComWriter:
         # No chapter case.
         if processed_string == None:
             return str()
-        
+
         return processed_string.split(self.parser_data['verses_end'])[-1]
 
-    def _get_book_title(self,book_row: str, site_bible_num: int) -> None:
+    def _get_book_title(self,book: str, site_bible_num: int) -> None:
         '''
         Pulls book title from HTML.
 
         Parameters
         ----------
-            book_row : str
+            book : str
                 Row name for the book.
             site_bible_num : str
                 Number for the bible in bible.com (each bible has its own number).
         '''
-        url = self._build_url(book_row, 1, site_bible_num)
+        url = self._build_url(book, 1, site_bible_num)
 
         for i in range(10):
             try:
                 time.sleep(0.1)
                 response = requests.get(url)
-
                 html = response.text
                 html = BeautifulSoup(html, "html.parser")
                 self.chapter_title = str(html)
@@ -170,31 +164,29 @@ class BibleDotComWriter:
             Language for of the selected bible.
         '''
         print(language)
-        if language == "Arabic" or language ==  "arabic" or \
-           language == "العريه" or language ==  "عريه":
+        if language in ["Arabic", "arabic", "العريه", "عريه"]:
             self.language = "arabic"
             return None
-        if language == "Spanish" or language == "spanish" or \
-           language == "Español" or language == "español":
+        if language in ["Spanish", "spanish", "Español", "español"]:
             self.language = "spanish"
             return None
-        if language == "English" or language == "english":
+        if language in ["English", "english"]:
             self.language = "english"
             return None
         print("Warning: Your language <{0}> is not supported, switching to english.".format(language))
         self.language = "english"
 
-    def _build_url(self, book_row: str, chapter_num: str, site_bible_num: int) -> str:
+    def _build_url(self, book: str, chapter_num: str, site_bible_num: int) -> str:
         """
         Builds the URL for the HTML query.
 
         Parameters
         ----------
-        book_row : str
+        book : str
             Book name.
         chapter_num : str
             Chapter number in the bible verse.
-        site_bible_num : str
+        site_bible_num : int
             Name of the bible version from the site.
 
         Returns
@@ -204,7 +196,7 @@ class BibleDotComWriter:
         """
         url = self.url_base                                           \
             .replace(self.url_replace_bible, self.bible.capitalize()) \
-            .replace(self.url_replace_book, book_row)                 \
+            .replace(self.url_replace_book, book)                     \
             .replace(self.url_replace_chapter, str(chapter_num))      \
             .replace(self.url_replace_bible_number, str(site_bible_num))
         return url
@@ -226,15 +218,15 @@ class BibleDotComWriter:
         self._language(language)
         if len(self.books_table) == 0:
             return None
-        
+
         self.bible = bible
         self._make_directory()
 
         # Bible (version) level.
         print("{0} {1}".format(self.language_specific[self.language]['version'], self.bible))
         # Book level.
-        for book_row in self.books_table:
-            self._get_book_title(book_row, site_bible_num)
+        for book_acronym in self.books_table:
+            self._get_book_title(book_acronym, site_bible_num)
             print("{0} {1}".format(self.language_specific[self.language]['book'], self.chapter_title))
             book = ""
             chapter_num = 0
@@ -243,10 +235,10 @@ class BibleDotComWriter:
             found = True
             while found == True:
                 chapter_num += 1
-                url = self._build_url(book_row, chapter_num, site_bible_num)
+                url = self._build_url(book_acronym, chapter_num, site_bible_num)
                 # Give a multiple tries to get the chapter.
                 for i in range(10):
-                    try:    
+                    try:
                         # Sometimes pulling information to quickly triggers server in the web server.
                         time.sleep(0.1)
                         response = requests.get(url)
@@ -257,7 +249,7 @@ class BibleDotComWriter:
                         chapter = self._process_html(response)
                         if len(chapter) > 0:
                             book = book + "{0} {1}\n".format(\
-                                self.language_specific[self.language]['chapter'], str(chapter_num))
+                                self.language_specific[self.language]['chapter_header'], str(chapter_num))
                             book = book + chapter + "\n"
                             break
                         else:
@@ -266,9 +258,9 @@ class BibleDotComWriter:
                         print("Error: Failed to retrieve the page {0}. Status code:{1}"\
                             .format(url, response.status_code))
                         continue
-                    
+
                 if i == 9:
-                    found = False                        
+                    found = False
                 print("{0} {1}".format( self.language_specific[self.language]['chapter'], str(chapter_num)))
             filename = self.bible + "/" + self.chapter_title + ".txt"
             self._write(book, filename)

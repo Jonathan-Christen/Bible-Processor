@@ -16,15 +16,19 @@ parser_data = {'chapter_title_start': '<div class="ChapterContent_reader__Dt27r"
                'verses_end':          '</path></svg>'}
 
 language_specific = {
-        'spanish': {'version': 'Biblia   |',
-                    'book':    'Libre    |',
-                    'chapter': 'Capitulo |'},
-        'english': {'version': 'Version |',
-                    'book':    'Book    |',
-                    'chapter': 'Chapter |'},
-        'arabic' : {'version': 'بداية | ',
-                    'book':    'كتب   | ',
-                    'chapter': 'اصدار | '} }
+        'spanish': {'version':        'Biblia   |',
+                    'book':           'Libre    |',
+                    'chapter':        'Capitulo |',
+                    'chapter_header': 'Capitulo'},
+        'english': {'version':        'Version |',
+                    'book':           'Book    |',
+                    'chapter':        'Chapter |',
+                    'chapter_header': 'Chapter'},
+        'arabic' : {'version':        'بداية | ',
+                    'book':           'كتب   | ',
+                    'chapter':        'الفصل | ',
+                    'chapter_header': 'الفصل'} }
+
 books_table = [
         "GEN",
         "EXO",
