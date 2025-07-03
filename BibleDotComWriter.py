@@ -19,14 +19,14 @@ class BibleDotComWriter:
         Constructor
         '''
         # Pushes variables from BibleDotComWriterConfig.py into the object.
-        self.url_replace_bible_number = url_replace_bible_number
-        self.url_replace_bible        = url_replace_bible
-        self.url_replace_book         = url_replace_book
-        self.url_replace_chapter      = url_replace_chapter
-        self.url_base                 = url_base
-        self.books_table              = books_table
-        self.language_specific        = language_specific
-        self.parser_data              = parser_data
+        self._url_replace_bible_number = url_replace_bible_number
+        self._url_replace_bible        = url_replace_bible
+        self._url_replace_book         = url_replace_book
+        self._url_replace_chapter      = url_replace_chapter
+        self._url_base                 = url_base
+        self._books_table              = books_table
+        self._language_specific        = language_specific
+        self._parser_data              = parser_data
 
     def __del__(self) -> None:
         '''
@@ -53,8 +53,8 @@ class BibleDotComWriter:
         '''
         Make a new directory for each bible version.
         '''
-        if not os.path.exists(self.bible):
-            os.mkdir(self.bible)
+        if not os.path.exists(self._bible):
+            os.mkdir(self._bible)
 
     def _process_html(self, response: object) -> str:
         '''
@@ -76,7 +76,7 @@ class BibleDotComWriter:
         text = str(html)
 
         # Split text to first verse.
-        verse_numbers = text.split(self.parser_data['verse_number_start'])
+        verse_numbers = text.split(self._parser_data['verse_number_start'])
         processed_string = None
         for count, raw in enumerate(verse_numbers):
             # Verses 0 and 1 are unusable values.
@@ -84,45 +84,45 @@ class BibleDotComWriter:
                 continue
 
             # Gather verses.
-            verses_raw = raw.split(self.parser_data['verse_start'])
-            for verse in verses_raw:
-                verse = verse.split(self.parser_data['verse_end'])[0]
+            verse_raw = raw.split(self._parser_data['verse_start'])
+            for verse_section in verse_raw:
+                verse_section = verse_section.split(self._parser_data['verse_end'])[0]
 
-                # The # occurs within verse continuation.
-                if verse == '#':
+                # The # is used for site links
+                if verse_section == '#':
                     continue
 
                 # First string case.
                 if processed_string == None:
-                    processed_string = verse
+                    processed_string = verse_section
                     continue
 
                 # Edge cases.
                 if  processed_string[-1] in [ ' ', '(' ]:
-                    processed_string = processed_string + verse
+                    processed_string = processed_string + verse_section
                     continue
 
-                if verse[0] in [ ' ', ';', ':', ',', '.', '?', '!' ]:
-                    processed_string = processed_string + verse
+                if verse_section[0] in [ ' ', ';', ':', ',', '.', '?', '!' ]:
+                    processed_string = processed_string + verse_section
                     continue
 
-                if  verse == 'eñor':
-                    processed_string = processed_string + verse
+                if  verse_section == 'eñor':
+                    processed_string = processed_string + verse_section
                     continue
 
-                if  processed_string[-1] == 'L' and verse[:3] == 'ord':
-                    processed_string = processed_string + verse
+                if  processed_string[-1] == 'L' and verse_section[:3] == 'ord':
+                    processed_string = processed_string + verse_section
                     continue
 
-                processed_string = processed_string + " " + verse
+                processed_string = processed_string + " " + verse_section
 
         # No chapter case.
         if processed_string == None:
             return str()
 
-        return processed_string.split(self.parser_data['verses_end'])[-1]
+        return processed_string.split(self._parser_data['verses_end'])[-1]
 
-    def _get_book_title(self,book: str, site_bible_num: int) -> None:
+    def _get_book_title(self, book: str, site_bible_num: int) -> None:
         '''
         Pulls book title from HTML.
 
@@ -139,19 +139,24 @@ class BibleDotComWriter:
             try:
                 time.sleep(0.1)
                 response = requests.get(url)
-                html = response.text
-                html = BeautifulSoup(html, "html.parser")
-                self.chapter_title = str(html)
-                self.chapter_title = self.chapter_title.split(self.parser_data['chapter_title_start'])[-1]
-                self.chapter_title = self.chapter_title.split(self.parser_data['chapter_title_end'])[0]
+                if response.status_code == 200:
+                    html = response.text
+                    html = BeautifulSoup(html, "html.parser")
+                    self._chapter_title = str(html)
+                    self._chapter_title = self._chapter_title.split(self._parser_data['chapter_title_start'])[-1]
+                    self._chapter_title = self._chapter_title.split(self._parser_data['chapter_title_end'])[0]
+                else:
+                    continue
 
                 while True:
-                    if isdigit(self.chapter_title[-1]) == True:
-                        self.chapter_title = self.chapter_title[:-2]
+                    if isdigit(self._chapter_title[-1]) == True:
+                        self._chapter_title = self._chapter_title[:-2]
                     else:
                         break
                 break
             except:
+                if i == 9:
+                    print("Chapter title for book {1} could not be aquired.".format(book))
                 continue
 
     def _language(self, language: str) -> None:
@@ -163,18 +168,12 @@ class BibleDotComWriter:
         language : str
             Language for of the selected bible.
         '''
-        print(language)
-        if language in ["Arabic", "arabic", "العريه", "عريه"]:
-            self.language = "arabic"
-            return None
-        if language in ["Spanish", "spanish", "Español", "español"]:
-            self.language = "spanish"
-            return None
-        if language in ["English", "english"]:
-            self.language = "english"
-            return None
+        for key, value in self._language_specific.items():
+            if language in value['language_icons']:
+                self._language = key
+                return None
         print("Warning: Your language <{0}> is not supported, switching to english.".format(language))
-        self.language = "english"
+        self._language = "english"
 
     def _build_url(self, book: str, chapter_num: str, site_bible_num: int) -> str:
         """
@@ -194,11 +193,11 @@ class BibleDotComWriter:
         url : str
             url string of the webpage to be queried.
         """
-        url = self.url_base                                           \
-            .replace(self.url_replace_bible, self.bible.capitalize()) \
-            .replace(self.url_replace_book, book)                     \
-            .replace(self.url_replace_chapter, str(chapter_num))      \
-            .replace(self.url_replace_bible_number, str(site_bible_num))
+        url = self._url_base                                           \
+            .replace(self._url_replace_bible, self._bible.capitalize()) \
+            .replace(self._url_replace_book, book)                     \
+            .replace(self._url_replace_chapter, str(chapter_num))      \
+            .replace(self._url_replace_bible_number, str(site_bible_num))
         return url
 
     def write_bible(self, site_bible_num: int, bible: str, language: str) -> None:
@@ -216,18 +215,19 @@ class BibleDotComWriter:
                 The language that is desired to be used.
         '''
         self._language(language)
-        if len(self.books_table) == 0:
+        if len(self._books_table) == 0:
+            print("books_table in the config file is empty, {0} not written to file.".format(bible))
             return None
 
-        self.bible = bible
+        self._bible = bible
         self._make_directory()
 
         # Bible (version) level.
-        print("{0} {1}".format(self.language_specific[self.language]['version'], self.bible))
+        print("{0} {1}".format(self._language_specific[self._language]['version'], self._bible))
         # Book level.
-        for book_acronym in self.books_table:
+        for book_acronym in self._books_table:
             self._get_book_title(book_acronym, site_bible_num)
-            print("{0} {1}".format(self.language_specific[self.language]['book'], self.chapter_title))
+            print("{0} {1}".format(self._language_specific[self._language]['book'], self._chapter_title))
             book = ""
             chapter_num = 0
 
@@ -249,7 +249,7 @@ class BibleDotComWriter:
                         chapter = self._process_html(response)
                         if len(chapter) > 0:
                             book = book + "{0} {1}\n".format(\
-                                self.language_specific[self.language]['chapter_header'], str(chapter_num))
+                                self._language_specific[self._language]['chapter_header'], str(chapter_num))
                             book = book + chapter + "\n"
                             break
                         else:
@@ -261,15 +261,15 @@ class BibleDotComWriter:
 
                 if i == 9:
                     found = False
-                print("{0} {1}".format( self.language_specific[self.language]['chapter'], str(chapter_num)))
-            filename = self.bible + "/" + self.chapter_title + ".txt"
+                print("{0} {1}".format( self._language_specific[self._language]['chapter'], str(chapter_num)))
+            filename = self._bible + "/" + self._chapter_title + ".txt"
             self._write(book, filename)
         print('Done.')
 
 # Example code.
 if __name__ == "__main__":
     bible_class = BibleDotComWriter()
-    bible_class.write_bible(1588, "amp",  "English")
+    #bible_class.write_bible(1588, "amp",  "English")
     bible_class.write_bible(101,  "keh",  "Arabic" )
     bible_class.write_bible(103,  "nbla", "Spanish")
 

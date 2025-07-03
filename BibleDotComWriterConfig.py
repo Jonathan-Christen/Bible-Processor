@@ -16,15 +16,18 @@ parser_data = {'chapter_title_start': '<div class="ChapterContent_reader__Dt27r"
                'verses_end':          '</path></svg>'}
 
 language_specific = {
-        'spanish': {'version':        'Biblia   |',
+        'spanish': {'language_icons': ['Spanish', 'spanish', 'Español', 'español'],
+                    'version':        'Biblia   |',
                     'book':           'Libre    |',
                     'chapter':        'Capitulo |',
                     'chapter_header': 'Capitulo'},
-        'english': {'version':        'Version |',
+        'english': {'language_icons': ['English', 'english'],
+                    'version':        'Version |',
                     'book':           'Book    |',
                     'chapter':        'Chapter |',
                     'chapter_header': 'Chapter'},
-        'arabic' : {'version':        'بداية | ',
+        'arabic':  {'language_icons': ['Arabic', 'arabic', 'العريه', 'عريه'],
+                    'version':        'بداية | ',
                     'book':           'كتب   | ',
                     'chapter':        'الفصل | ',
                     'chapter_header': 'الفصل'} }
