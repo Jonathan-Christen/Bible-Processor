@@ -27,6 +27,7 @@ class BibleDotComWriter:
         self._books_table              = books_table
         self._language_specific        = language_specific
         self._parser_data              = parser_data
+        self._disjoined_words          = disjoined_words
 
     def __del__(self) -> None:
         '''
@@ -106,13 +107,11 @@ class BibleDotComWriter:
                     processed_string = processed_string + verse_section
                     continue
 
-                if  verse_section == 'eñor':
-                    processed_string = processed_string + verse_section
-                    continue
-
-                if  processed_string[-1] == 'L' and verse_section[:3] == 'ord':
-                    processed_string = processed_string + verse_section
-                    continue
+                for disjoined_word in self._disjoined_words:
+                    if  processed_string[-1] == disjoined_word[0] and \
+                            verse_section[:len(disjoined_word[1])] == processed_string[1]:
+                        processed_string = processed_string + verse_section
+                        continue
 
                 processed_string = processed_string + " " + verse_section
 
@@ -270,6 +269,6 @@ class BibleDotComWriter:
 if __name__ == "__main__":
     bible_class = BibleDotComWriter()
     #bible_class.write_bible(1588, "amp",  "English")
-    bible_class.write_bible(101,  "keh",  "Arabic" )
     bible_class.write_bible(103,  "nbla", "Spanish")
+    bible_class.write_bible(101,  "keh",  "Arabic" )
 

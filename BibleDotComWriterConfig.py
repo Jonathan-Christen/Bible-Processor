@@ -100,3 +100,9 @@ books_table = [
         "JUD",
         "REV"
 ]
+
+disjoined_words = [
+        ["S", "eñor"],
+        ["D", "ios"],
+        ["L", "ord"]
+        ]
