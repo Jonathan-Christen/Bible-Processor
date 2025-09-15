@@ -107,11 +107,15 @@ class BibleDotComWriter:
                     processed_string = processed_string + verse_section
                     continue
 
+                skip = False
                 for disjoined_word in self._disjoined_words:
                     if  processed_string[-1] == disjoined_word[0] and \
                             verse_section[:len(disjoined_word[1])] == disjoined_word[1]:
                         processed_string = processed_string + verse_section
+                        skip = True
                         continue
+                if skip == True:
+                    continue
 
                 processed_string = processed_string + " " + verse_section
 
